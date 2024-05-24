@@ -1,15 +1,35 @@
-import { useState } from "react";
-import MainMap from "./components/MainMap";
-import MapSelectionForm from "./components/MapSelectionForm";
+import { useEffect, useState } from "react";
+import useFetch from "./hooks/useFetch";
+import Game from "./components/Game";
+import { useNavigate } from "react-router-dom";
 
 function App() {
+  const { data, fetchData } = useFetch();
+  let [playedLevelIds, setPlayedLevelIds] = useState([]);
+
+  async function getNewGameData(playedGamesIds) {
+    let response = await fetchData("Data/GetRandom", "POST", playedGamesIds);
+    if (response === "error" && playedLevelIds.length != 0) {
+      setPlayedLevelIds([]);
+      await getNewGameData([]);
+    }
+  }
+
+  useEffect(() => {
+    const fetchDataOnMount = async () => {
+      await getNewGameData([]);
+    };
+
+    fetchDataOnMount();
+  }, []);
+
   return (
-    <>
-      <div style={{ position: "absolute", bottom: "3%", left: "5%" }}>
-        <MapSelectionForm />
-      </div>
-      <MainMap />
-    </>
+    <Game
+      gameData={data}
+      fetchGameData={getNewGameData}
+      playedLevelIds={playedLevelIds}
+      setPlayedLevelIds={setPlayedLevelIds}
+    />
   );
 }
 

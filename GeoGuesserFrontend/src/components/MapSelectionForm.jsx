@@ -1,10 +1,15 @@
-import React, { useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import LocationFinder from "./LocationFinder";
 import "../styles/MapSelectionForm.css";
 
-const MapSelectionForm = () => {
+const MapSelectionForm = ({ setGuess, gameData }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [rerenderKey, setRerenderKey] = useState(0);
+  const bounds = [
+    [-90, -180],
+    [90, 180],
+  ];
 
   const handleClick = (event) => {
     setSelectedLocation({
@@ -13,53 +18,36 @@ const MapSelectionForm = () => {
     });
   };
 
+  useEffect(() => {
+    setRerenderKey((prevKey) => prevKey + 1);
+    setSelectedLocation(null);
+  }, [gameData]);
+
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (selectedLocation) {
-      console.log("Submitted Latitude:", selectedLocation.lat);
-      console.log("Submitted Longitude:", selectedLocation.lng);
-    }
+    setGuess(selectedLocation);
   };
 
   return (
-    <>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          height: "25vh",
-          width: "20vw",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <div
-          id="map"
-          style={{
-            height: "100%",
-            width: "100%",
-            border: "0.05em solid black",
-          }}
+    <form onSubmit={handleSubmit} className="mapForm">
+      <div key={rerenderKey} id="map" className="selectionMap">
+        <MapContainer
+          style={{ height: "100%", width: "100%" }}
+          center={[10, 0]}
+          zoom={1}
+          scrollWheelZoom={true}
+          maxBounds={bounds}
+          maxBoundsViscosity={1.0}
         >
-          <MapContainer
-            style={{ height: "100%", width: "100%" }}
-            center={[0, 0]}
-            zoom={4}
-            scrollWheelZoom={true}
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <LocationFinder handleClick={handleClick} />
-            {selectedLocation && (
-              <Marker
-                position={[selectedLocation.lat, selectedLocation.lng]}
-              ></Marker>
-            )}
-          </MapContainer>
-        </div>
-        <br />
-        <button type="submit">Submit</button>
-      </form>
-    </>
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" />
+          <LocationFinder handleClick={handleClick} />
+          {selectedLocation && (
+            <Marker position={[selectedLocation.lat, selectedLocation.lng]} />
+          )}
+        </MapContainer>
+      </div>
+      <button type="submit">Submit</button>
+    </form>
   );
 };
 

@@ -19,13 +19,15 @@ namespace GeoGuesserAPI.Controllers
             if (data == null) return NotFound();
             return Ok(data);
         }
-        [HttpGet]
-        public IActionResult GetRandom()
+        [HttpPost]
+        public IActionResult GetRandom(List<long> playedLevelIds)
         {
             try
             {
                 var maps = new List<MapModel>();
                 maps.AddRange(_context.Maps);
+                maps = maps.Where(x => !playedLevelIds.Contains(x.Id)).ToList();
+                if (maps.Count == 0) return NotFound();
                 var data = maps[new Random().Next(0, maps.Count)];
                 return Ok(data);
             }
@@ -42,14 +44,13 @@ namespace GeoGuesserAPI.Controllers
             {
                 var data = await GetMapModelFromUrl(url);
                 await _context.Maps.AddAsync(data);
-                return await Create(data.Id.ToString());
+                await _context.SaveChangesAsync();
+                return Ok(data.Id);
             }
             catch (Exception e)
             {
                 return BadRequest(e.Message);
             }
-            
-            
         }
 
 
@@ -60,8 +61,8 @@ namespace GeoGuesserAPI.Controllers
             string lonPattern = @"!2m2!1d[^!]+!2d([^!]+)";
 
             string panoramaId = Regex.Match(url, panoIdPattern).Groups[1].Value;
-            double latitude = double.Parse(Regex.Match(url, latPattern).Groups[1].Value);
-            double longitude = double.Parse(Regex.Match(url, lonPattern).Groups[1].Value);
+            double latitude = double.Parse(Regex.Match(url, latPattern).Groups[1].Value.Replace(".", ","));
+            double longitude = double.Parse(Regex.Match(url, lonPattern).Groups[1].Value.Replace(".", ","));
 
             using HttpClient client = new HttpClient();
             var response = await client.GetAsync(
